@@ -1,0 +1,7 @@
+INDEX VERSION 1.131+C:\Users\bartu\AVSP\.metadata\.plugins\org.eclipse.jdt.core
+3537080917.index
+3883950653.index
+2318101508.index
+2075846571.index
+527485540.index
+1780334196.index

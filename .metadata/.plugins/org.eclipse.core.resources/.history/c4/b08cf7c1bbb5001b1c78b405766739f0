@@ -1,0 +1,115 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+public class Test3 {
+
+    /**
+     * @param args the command line arguments
+     */
+    
+    public static class Node{
+        public int color;
+        public int nodeID;
+        public int behind;
+        public int distance;
+        public int ignore;
+        public List<Node> connected = new ArrayList();
+        
+        public Node(){
+            color = 0;
+            nodeID = 0;
+            behind = 0;
+            distance = 0;
+            ignore = 0;
+            connected = new ArrayList();
+        }
+        
+        public Node(int color, int NodeID, int behind, int distance, int ignore, List<Node> connected){
+            color = this.color;
+            nodeID = this.nodeID;
+            behind = this.behind;
+            distance = this.distance;
+            ignore = this.ignore;
+            connected = this.connected;
+        }
+        
+    }
+    
+    public static void main(String[] args) {
+        
+        Scanner input = new Scanner(System.in);
+        List<Node> nodeList = new ArrayList();
+        Queue<Node> queue = new LinkedList<Node>();
+        String[] graphConf = new String[2];
+        Integer numOfNodes = 0;
+        double numOfEdges = 0;
+        graphConf = input.nextLine().split("\\s+");
+        numOfNodes = Integer.parseInt(graphConf[0]);
+        numOfEdges = Integer.parseInt(graphConf[1]);
+        int nodeNumber = 0;
+        while(nodeNumber<numOfNodes){
+            Node node = new Node();
+            node.nodeID = nodeNumber;
+            node.color = Integer.parseInt(input.nextLine());
+            node.distance = node.color == 1 ? 0 : Integer.MAX_VALUE;
+            node.behind = node.color == 1 ? nodeNumber : -1;
+            nodeList.add(node);
+            nodeNumber++;
+        }
+        int edgeNumber = 0;
+        Node beginNode, endNode;
+        while(edgeNumber<numOfEdges){
+            String[] connection = new String[2];
+            connection = input.nextLine().split("\\s+");
+            beginNode = nodeList.get(Integer.parseInt(connection[0]));
+            endNode = nodeList.get(Integer.parseInt(connection[1]));
+            if(!nodeList.get(beginNode.nodeID).connected.contains(endNode)) nodeList.get(beginNode.nodeID).connected.add(endNode);
+            if(!nodeList.get(endNode.nodeID).connected.contains(beginNode)) nodeList.get(endNode.nodeID).connected.add(beginNode);
+            connection = null;
+            edgeNumber++;
+        }
+        for(Node node:nodeList){
+            if(node.color==1) queue.add(node);
+        }
+        List<Node> nextJumpList = new ArrayList<>();
+        Node blackNode;
+        do{
+            blackNode=queue.poll();
+            nextJumpList = blackNode.connected;
+            blackNode.ignore=1;
+            for(Node next:nextJumpList){
+                if(next.color==0 && next.ignore==0){
+                    queue.add(next);
+                    next.ignore=1;
+                    if(blackNode.distance+1<next.distance){
+                        next.distance=blackNode.distance+1;
+                        next.behind=blackNode.behind;
+                    }
+                }
+            }
+        }while(!queue.isEmpty());
+        for(Node node:nodeList){
+            if(node.distance==Integer.MAX_VALUE){
+                System.out.print("-1 -1\n");
+            }
+            else{
+                System.out.print(node.behind+" "+node.distance);
+                System.out.print("\n");
+            }
+            
+        }
+    }
+}

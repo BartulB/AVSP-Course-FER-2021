@@ -1,0 +1,129 @@
+package lab1;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.*;
+
+/**
+ * Created by Vuki on 5.4.2017..
+ */
+@SuppressWarnings("Duplicates")
+public class Temp {
+
+    public static void main(String[] args) {
+
+        //InputStream paths = SimHash.class.getResourceAsStream("sim_hash_buckets_input2");
+
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader("C:/Users/bartu/Downloads/lab1B_primjer/test0/R.in"))) {
+            //   try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(paths))) {
+
+            int N = Integer.parseInt(bufferedReader.readLine());
+            String[] hashes = new String[N];
+            //text
+            for (int i = 0; i < N; i++) {
+                // Svaki tekst je zapisan u zasebnoj liniji te sadrzi male engleske znakove
+                String line = bufferedReader.readLine();
+                hashes[i] = Main.simhash(line);
+                //System.out.println(hashes[i]);
+            }
+
+            Map<Integer, Set<Integer>> kandidati = lsh(hashes);
+
+            int Q = Integer.parseInt(bufferedReader.readLine());
+            //quests
+            for (int i = 0; i < Q; i++) {
+                String[] line = bufferedReader.readLine().split(" ");
+                int I = Integer.parseInt(line[0]);
+                int K = Integer.parseInt(line[1]);
+
+                int numOfTexts = diffWithDistanceFromHash(hashes, kandidati, I, K);
+                System.out.println(numOfTexts);
+            }
+            
+			System.out.println(kandidati.get(100));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static Map<Integer, Set<Integer>> lsh(String[] hashes) {
+
+
+        Map<Integer, Set<Integer>> kandidati = new HashMap<>();
+        int bandwithMax = 8;
+        for (int pojas = 1; pojas <= bandwithMax; pojas++) {
+
+            Map<Integer, Set<Integer>> pretinci = new HashMap<>();
+
+            for (int trenutniId = 0; trenutniId < hashes.length; trenutniId++) {
+                String hash = hashes[trenutniId];
+
+
+                int val = hash2int(pojas, hash);
+                Set<Integer> tekstoviUPretincu = new HashSet<>();
+                if (pretinci.get(val) != null) {
+                    tekstoviUPretincu = pretinci.get(val);
+
+
+                    for (Integer textId : tekstoviUPretincu) {
+                        //ako postoji dodaj ga, inace mu stvori kljuc pa ga dodaj
+                        kandidati.computeIfAbsent(trenutniId, k -> new HashSet<>());
+                        kandidati.get(trenutniId).add(textId);
+
+                        kandidati.computeIfAbsent(textId, k -> new HashSet<>());
+                        kandidati.get(textId).add(trenutniId);
+                    }
+                } else {
+                    tekstoviUPretincu = new HashSet<>();
+                }
+                tekstoviUPretincu.add(trenutniId);
+                pretinci.put(val, tekstoviUPretincu);
+            }
+        }
+        return kandidati;
+    }
+
+    private static String getBit(String hash, int from, int to) {
+        return hash.substring(from, to);
+    }
+
+    private static int hash2int(int pojas, String hash) {
+    	
+    	//System.out.println("Integer: " + Integer.parseInt(getBit(hash, pojas * 16 - 16, pojas * 16), 2));
+    	
+        return Integer.parseInt(getBit(hash, pojas * 16 - 16, pojas * 16), 2);
+    }
+
+    private static int diffWithDistanceFromHash(String[] hashes, Map<Integer, Set<Integer>> kandidati, int hashId, int distance) {
+        int diff = 0;
+        String currentHash = hashes[hashId];
+        char[] currentHashChars = currentHash.toCharArray();
+        Set<Integer> candidatesForI = kandidati.get(hashId);
+        
+        //System.out.println(candidatesForI);
+
+        for (Integer id : candidatesForI) {
+            char[] otherHashChars = hashes[id].toCharArray();
+            int diffTemp = 0;
+            for (int i = 0; i < otherHashChars.length; i++) {
+                char c = otherHashChars[i];
+                if (c != currentHashChars[i]) {
+                    diffTemp++;
+                }
+                if (diffTemp > distance) {
+                    break;
+                }
+            }
+            if (diffTemp <= distance) {
+                diff++;
+            }
+        }
+        return diff;
+    }
+
+}

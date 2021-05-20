@@ -1,0 +1,175 @@
+package lab1;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class TaskB {
+	
+	private static int N;
+	private static int Q;
+	private static int I;
+	private static int K;
+	private static String[] hashes;
+	//private static Map<Integer, Set<Integer>> candidates = new HashMap<>();
+	private static int b = 8;
+	private static int r = 16;
+
+	public static void main(String[] args) {
+		
+		//try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))){
+
+        try (BufferedReader reader = new BufferedReader(new FileReader("C:/Users/bartu/Downloads/lab1B_primjer/test0/R.in"))) {
+			
+			N = Integer.parseInt(reader.readLine());
+			
+			hashes = new String[N];
+			
+			for (int i=0; i<N; i++) {
+				
+				hashes[i] = Main.simhash(reader.readLine());
+			}
+			
+			Map<Integer, Set<Integer>> candidates = algorithmLSH(hashes);
+			System.out.println(candidates);
+			
+			Q = Integer.parseInt(reader.readLine());
+			
+			String line;
+			String[] lineArray;
+			
+			while ((line = reader.readLine()) != null) {
+				
+				if(line.isEmpty()) break;
+				
+				lineArray = line.split(" ");
+				
+				I = Integer.parseInt(lineArray[0]);
+				
+				K = Integer.parseInt(lineArray[1]);
+				
+				int numberOfSimilar = getNumberOfSimilar(I, K, candidates);
+				
+				System.out.println(numberOfSimilar);
+			}
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private static Map<Integer, Set<Integer>> algorithmLSH(String[] hashes){
+		
+		Map<Integer, Set<Integer>> candidates = new HashMap<>();
+		
+		for (int i=1; i<=b; i++) {
+			
+			Map<Integer, Set<Integer>> buckets = new HashMap<>();
+			
+			Set<Integer> textsInBucket = new HashSet<>();
+			
+			for (int j=0; j<N; j++) {
+				
+				String hash = hashes[j];
+				
+				int val = hashToint(i, hash);
+				
+				if (buckets.get(val) != null) {
+					
+					textsInBucket = buckets.get(val);
+					
+					for (Integer textId : textsInBucket) {
+						
+						candidates.computeIfAbsent(j, k -> new HashSet<>());
+						candidates.get(j).add(textId);
+						
+						candidates.computeIfAbsent(textId, k -> new HashSet<>());
+						candidates.get(textId).add(j);
+					}
+				}
+				else {
+					
+					textsInBucket.clear();
+				}
+				
+				textsInBucket.add(j);
+				
+				buckets.put(val, textsInBucket);
+			}
+		}
+		
+		return candidates;
+	}
+
+	private static int hashToint(int band, String hash) {
+		
+		int lowerBoundary = 0 + band*r - r;
+		
+		int upperBoundary = lowerBoundary + (r - 1);
+		
+		hash = hash.substring(lowerBoundary, upperBoundary);
+		
+		return Integer.parseInt(hash, 2);
+	}
+	
+	/**
+	* Returns number of similar texts with text in position I.  
+	*
+	* @param  position   position of text in document that is going to be used to find similar
+	* @param  distance	 maximum distance texts may vary
+	*/
+	private static int getNumberOfSimilar(int position, int distance, Map<Integer, Set<Integer>> candidates) {
+		
+		int count = 0;
+		
+		String hashInPositionI = hashes[position];
+		
+		Set<Integer> possibleCandidates = candidates.get(position);
+		
+		//System.out.println(possibleCandidates);
+		
+		if(possibleCandidates != null) {
+			
+			for (Integer candidat : possibleCandidates) {
+				
+				String hash = hashes[candidat];
+				
+				int hammingDistance = getHammingDistance(hashInPositionI, hash);
+				
+				if (hammingDistance <= distance) {
+					
+					count++;
+				}
+				
+			}
+		}
+		
+		return count;
+	}
+	
+	/**
+	* Returns Hamming distance between two binary numbers.  
+	*
+	* @param  s1   hash in position I in hashes
+	* @param  s2   next hash in hashes
+	*/
+	public static int getHammingDistance(String s1, String s2) {
+		
+		int i = 0, count = 0;
+		
+	    while (i < s1.length()) {
+	    	
+	        if (s1.charAt(i) != s2.charAt(i)) {
+	            
+	        	count++;
+	        }
+	        i++;
+	    }
+	    return count;
+	}
+
+}
